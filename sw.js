@@ -1,37 +1,44 @@
-const CACHE_NAME = 'cr-gendarmerie-cache-v1';
+const CACHE_NAME = "cr-gend-cache-v1";
 const urlsToCache = [
-  './',
-  './index.html',
-  './manifest.json',
-  './icon-192.png',
-  './icon-512.png'
-  // Ajoute ici tes fichiers CSS/JS si séparés
+  "/",               // page principale
+  "/index.html",
+  "/manifest.json",
+  "/icon-192.png",
+  "/icon-512.png",
+  "https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"
 ];
 
-self.addEventListener('install', event => {
+// Installation → mise en cache
+self.addEventListener("install", event => {
   event.waitUntil(
-    caches.open(CACHE_NAME)
-      .then(cache => cache.addAll(urlsToCache))
-      .then(() => self.skipWaiting())
+    caches.open(CACHE_NAME).then(cache => {
+      return cache.addAll(urlsToCache);
+    })
   );
 });
 
-self.addEventListener('activate', event => {
+// Activation → nettoyage des vieux caches
+self.addEventListener("activate", event => {
   event.waitUntil(
     caches.keys().then(cacheNames =>
       Promise.all(
-        cacheNames.map(name => {
-          if(name !== CACHE_NAME) return caches.delete(name);
-        })
+        cacheNames.filter(name => name !== CACHE_NAME)
+                  .map(name => caches.delete(name))
       )
     )
   );
-  self.clients.claim();
 });
 
-self.addEventListener('fetch', event => {
+// Interception des requêtes → offline support
+self.addEventListener("fetch", event => {
   event.respondWith(
-    caches.match(event.request)
-      .then(response => response || fetch(event.request))
+    caches.match(event.request).then(response => {
+      // si trouvé en cache → retourne
+      if (response) return response;
+      // sinon → tente un fetch réseau
+      return fetch(event.request).catch(() =>
+        caches.match("/index.html") // fallback si offline
+      );
+    })
   );
 });
