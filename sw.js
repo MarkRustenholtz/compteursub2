@@ -1,4 +1,4 @@
-const CACHE_NAME_ESR = "cr-gendarmerie-esr-v1";
+const CACHE_NAME = "cr-gendarmerie-esr-v1";
 const urlsToCache = [
   "/",               // page principale
   "/index.html",
@@ -11,7 +11,7 @@ const urlsToCache = [
 // Installation → mise en cache
 self.addEventListener("install", event => {
   event.waitUntil(
-    caches.open(CACHE_NAME_ESR).then(cache => {
+    caches.open(CACHE_NAME).then(cache => {
       return cache.addAll(urlsToCache);
     })
   );
@@ -22,7 +22,7 @@ self.addEventListener("activate", event => {
   event.waitUntil(
     caches.keys().then(cacheNames =>
       Promise.all(
-        cacheNames.filter(name => name !== CACHE_NAME_ESR)
+        cacheNames.filter(name => name !== CACHE_NAME)
                   .map(name => caches.delete(name))
       )
     )
