@@ -1,0 +1,373 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>CR Gendarmerie</title>
+
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#3498db">
+<link rel="apple-touch-icon" href="icon-192.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+
+<style>
+  body { font-family: Arial,sans-serif; margin:10px; max-width:900px; margin:auto; background:#fff; color:#222;}
+  h1,h2 { text-align:center; }
+  button { cursor:pointer; font-weight:bold; border:none; border-radius:6px; padding:6px 12px; font-size:1.1em; margin:4px 2px; min-width:36px; min-height:36px; user-select:none; transition: background-color 0.2s ease;}
+  button.plusminus { width:48px; border-radius:10px; font-size:1.5em;}
+  button.plusminus:hover { background-color:#ddd; }
+  button.red { background-color:#d9534f; color:white; }
+  button.red:hover { background-color:#c9302c; }
+  button.blue { background-color:#3498db; color:white; }
+  button.blue:hover { background-color:#217dbb; }
+  button.green { background-color:#28a745; color:white; }
+  button.green:hover { background-color:#1e7e34; }
+  .flex-row { display:flex; gap:10px; flex-wrap:wrap; align-items:center; margin-bottom:12px;}
+  .vehicle-card { border:2px solid #3498db; border-radius:10px; padding:12px; margin-bottom:18px; background:#f9fafe;}
+  .vehicle-card h3 { margin-top:0; color:#2c3e50; }
+  .manual-input { width:80px; font-size:1em; padding:4px 6px; }
+  .info-input { width:150px; font-size:1em; padding:4px 6px; }
+  textarea { width:100%; min-height:80px; font-family: monospace; font-size:1em; padding:8px; box-sizing:border-box; border-radius:4px; border:1px solid #ccc; resize:vertical; }
+  #qrcode { text-align:center; margin-top:20px; }
+  .info-section { border:2px solid #28a745; border-radius:10px; padding:15px; margin-bottom:20px; background:#f8fff9;}
+  .info-row { display:flex; gap:15px; flex-wrap:wrap; align-items:center; margin-bottom:10px;}
+</style>
+</head>
+<body>
+<h1>CR Gendarmerie - Moyens / Personnes</h1>
+
+<section class="info-section">
+  <h3 style="margin-top:0; color:#2c3e50;">Informations personnelles</h3>
+  <div class="info-row">
+    <label>Grade : <input type="text" id="grade" class="info-input" placeholder="Entrez votre grade"></label>
+    <label>Nom Prénom : <input type="text" id="nomPrenom" class="info-input" placeholder="Entrez nom prénom"></label>
+  </div>
+  <div class="info-row">
+    <label>Nigend : <input type="text" id="nigend" class="info-input" placeholder="Entrez Nigend"></label>
+    <label>CRT : <input type="text" id="crt" class="info-input" placeholder="Entrez CRT"></label>
+  </div>
+  <div style="text-align:center; margin-top:15px;">
+    <button id="validerInfos" class="green">Valider les informations</button>
+    <button id="resetInfosBtn" class="red">Effacer les informations</button>
+  </div>
+</section>
+
+<section id="vehiculesSection">
+<!-- Carte Train -->
+<div class="vehicle-card" id="trainCard">
+  <h3>Train</h3>
+  <div class="flex-row">
+    <div>
+      <button class="plusminus" data-type="train" data-field="vehicules" data-action="minus">-</button>
+      <span id="trainVehiclesCount">0</span> véhicules
+      <button class="plusminus" data-type="train" data-field="vehicules" data-action="plus">+</button>
+    </div>
+    <div>
+      <button class="plusminus" data-type="train" data-field="cv" data-action="minus">-</button>
+      <span id="trainCvCount">0</span> CV
+      <button class="plusminus" data-type="train" data-field="cv" data-action="plus">+</button>
+    </div>
+    <div>
+      <label>Ajouter CV manuellement:
+        <input type="number" id="trainCvManual" class="manual-input" min="0" value="0" />
+        <button id="trainCvAddManualBtn" class="blue">Ajouter</button>
+      </label>
+    </div>
+    <div>
+      <button class="plusminus" data-type="train" data-field="cf" data-action="minus">-</button>
+      <span id="trainCfCount">0</span> CF
+      <button class="plusminus" data-type="train" data-field="cf" data-action="plus">+</button>
+    </div>
+  </div>
+</div>
+
+<!-- Carte Bus -->
+<div class="vehicle-card" id="busCard">
+  <h3>Bus</h3>
+  <div class="flex-row">
+    <div>
+      <button class="plusminus" data-type="bus" data-field="vehicules" data-action="minus">-</button>
+      <span id="busVehiclesCount">0</span> véhicules
+      <button class="plusminus" data-type="bus" data-field="vehicules" data-action="plus">+</button>
+    </div>
+    <div>
+      <button class="plusminus" data-type="bus" data-field="cv" data-action="minus">-</button>
+      <span id="busCvCount">0</span> CV
+      <button class="plusminus" data-type="bus" data-field="cv" data-action="plus">+</button>
+    </div>
+    <div>
+      <label>Ajouter CV manuellement:
+        <input type="number" id="busCvManual" class="manual-input" min="0" value="0" />
+        <button id="busCvAddManualBtn" class="blue">Ajouter</button>
+      </label>
+    </div>
+    <div>
+      <button class="plusminus" data-type="bus" data-field="cf" data-action="minus">-</button>
+      <span id="busCfCount">0</span> CF
+      <button class="plusminus" data-type="bus" data-field="cf" data-action="plus">+</button>
+    </div>
+  </div>
+</div>
+
+<!-- Carte VL -->
+<div class="vehicle-card" id="vlCard">
+  <h3>VL</h3>
+  <div class="flex-row">
+    <div>
+      <button class="plusminus" data-type="vl" data-field="véhicules" data-action="minus">-</button>
+      <span id="vlVehiclesCount">0</span> véhicules
+      <button class="plusminus" data-type="vl" data-field="vehicules" data-action="plus">+</button>
+    </div>
+    <div>
+      <button class="plusminus" data-type="vl" data-field="cv" data-action="minus">-</button>
+      <span id="vlCvCount">0</span> CV
+      <button class="plusminus" data-type="vl" data-field="cv" data-action="plus">+</button>
+    </div>
+    <div>
+      <label>Ajouter CV manuellement:
+        <input type="number" id="vlCvManual" class="manual-input" min="0" value="0" />
+        <button id="vlCvAddManualBtn" class="blue">Ajouter</button>
+      </label>
+    </div>
+    <div>
+      <button class="plusminus" data-type="vl" data-field="cf" data-action="minus">-</button>
+      <span id="vlCfCount">0</span> CF
+      <button class="plusminus" data-type="vl" data-field="cf" data-action="plus">+</button>
+    </div>
+  </div>
+</div>
+
+<!-- Carte PL -->
+<div class="vehicle-card" id="plCard">
+  <h3>PL</h3>
+  <div class="flex-row">
+    <div>
+      <button class="plusminus" data-type="pl" data-field="vehicules" data-action="minus">-</button>
+      <span id="plVehiclesCount">0</span> véhicules
+      <button class="plusminus" data-type="pl" data-field="vehicules" data-action="plus">+</button>
+    </div>
+    <div>
+      <button class="plusminus" data-type="pl" data-field="cv" data-action="minus">-</button>
+      <span id="plCvCount">0</span> CV
+      <button class="plusminus" data-type="pl" data-field="cv" data-action="plus">+</button>
+    </div>
+    <div>
+      <label>Ajouter CV manuellement:
+        <input type="number" id="plCvManual" class="manual-input" min="0" value="0" />
+        <button id="plCvAddManualBtn" class="blue">Ajouter</button>
+      </label>
+    </div>
+    <div>
+      <button class="plusminus" data-type="pl" data-field="cf" data-action="minus">-</button>
+      <span id="plCfCount">0</span> CF
+      <button class="plusminus" data-type="pl" data-field="cf" data-action="plus">+</button>
+    </div>
+  </div>
+</div>
+
+</section>
+
+<hr/>
+
+<section style="text-align:center; margin-bottom:20px;">
+  <button id="generateBtn" class="blue">Générer compte rendu</button>
+  <button id="transmettreBtn" class="green">TRANSMETTRE</button>
+  <button id="resetBtn" class="red">Effacer les données sauvegardées</button>
+</section>
+
+<div id="qrcode"></div>
+
+<section>
+  <h2>Compte rendu généré :</h2>
+  <textarea id="compteRendu" readonly rows="12" style="font-family:monospace; white-space:pre-wrap;"></textarea>
+</section>
+
+<script>
+(() => {
+  const state = {
+    vehicules:{train:0,bus:0,vl:0,pl:0},
+    cv:{train:0,bus:0,vl:0,pl:0},
+    cf:{train:0,bus:0,vl:0,pl:0},
+    infos:{grade:'', nomPrenom:'', nigend:'', crt:''}
+  };
+  let saveTimeout=null, crGenere=false, infosValidees=false;
+
+  // Sauvegarde / chargement
+  function debounceSave(){
+    if(saveTimeout) clearTimeout(saveTimeout);
+    saveTimeout = setTimeout(()=>{
+      localStorage.setItem('moyensData', JSON.stringify({vehicules: state.vehicules, cv: state.cv, cf: state.cf}));
+      localStorage.setItem('infosPersonnelles', JSON.stringify(state.infos));
+    },3000);
+  }
+
+  function updateUI(){
+    ['train','bus','vl','pl'].forEach(t=>{
+      document.getElementById(t+'VehiclesCount').textContent = state.vehicules[t];
+      document.getElementById(t+'CvCount').textContent = state.cv[t];
+      document.getElementById(t+'CfCount').textContent = state.cf[t];
+    });
+  }
+
+  function changeCount(type,field,action){
+    if(action==='plus') state[field][type]++;
+    else if(state[field][type]>0) state[field][type]--;
+    updateUI();
+    debounceSave();
+  }
+
+  function addManualCv(type){
+    const input = document.getElementById(type+'CvManual');
+    const val = parseInt(input.value);
+    if(isNaN(val)||val<1) return alert('Veuillez saisir un nombre entier >0.');
+    state.cv[type] += val;
+    input.value = 0;
+    updateUI();
+    debounceSave();
+  }
+
+  function generateCR(){
+    let cr = '';
+    ['train','bus','vl','pl'].forEach(t=>{
+      cr += `${t.charAt(0).toUpperCase()+t.slice(1)}: ${state.vehicules[t]} / ${state.cv[t]} CV / ${state.cf[t]} CF\n`;
+    });
+    const totalVehicules = ['train','bus','vl','pl'].reduce((a,t)=>a+state.vehicules[t],0);
+    const totalPersonnes = ['train','bus','vl','pl'].reduce((a,t)=>a+state.cv[t]+state.cf[t],0);
+    cr += `\nTOTAL MOYENS : ${totalVehicules}\nTOTAL PERSONNES : ${totalPersonnes}`;
+    document.getElementById('compteRendu').value = cr;
+    crGenere = true;
+  }
+
+  // Infos personnelles
+  function saveInfos(){
+    state.infos.grade = document.getElementById('grade').value.trim();
+    state.infos.nomPrenom = document.getElementById('nomPrenom').value.trim();
+    state.infos.nigend = document.getElementById('nigend').value.trim();
+    state.infos.crt = document.getElementById('crt').value.trim();
+    localStorage.setItem('infosPersonnelles', JSON.stringify(state.infos));
+  }
+
+  function loadInfos(){
+    document.getElementById('grade').value = state.infos.grade;
+    document.getElementById('nomPrenom').value = state.infos.nomPrenom;
+    document.getElementById('nigend').value = state.infos.nigend;
+    document.getElementById('crt').value = state.infos.crt;
+  }
+
+  function disableInfos(disable){
+    ['grade','nomPrenom','nigend','crt','validerInfos'].forEach(id=>{
+      document.getElementById(id).disabled = disable;
+    });
+  }
+
+  // Charger les données
+  const savedData = localStorage.getItem('moyensData');
+  if(savedData){
+    try{
+      const parsed = JSON.parse(savedData);
+      state.vehicules = parsed.vehicules || state.vehicules;
+      state.cv = parsed.cv || state.cv;
+      state.cf = parsed.cf || state.cf;
+    }catch(e){}
+  }
+  const savedInfos = localStorage.getItem('infosPersonnelles');
+  if(savedInfos){
+    try{ state.infos = JSON.parse(savedInfos); }catch(e){}
+  }
+
+  if(state.infos.grade||state.infos.nomPrenom||state.infos.nigend||state.infos.crt){
+    infosValidees=true;
+    disableInfos(true);
+  }
+
+  updateUI();
+  loadInfos();
+
+  // Boutons +/- et manuel
+  document.querySelectorAll('button.plusminus').forEach(b=>b.addEventListener('click',()=>changeCount(b.dataset.type,b.dataset.field,b.dataset.action)));
+  ['train','bus','vl','pl'].forEach(t=>document.getElementById(t+'CvAddManualBtn').addEventListener('click',()=>addManualCv(t)));
+
+  document.getElementById('generateBtn').addEventListener('click',generateCR);
+
+  // Valider infos
+  document.getElementById('validerInfos').addEventListener('click',()=>{
+    const grade = document.getElementById('grade').value.trim();
+    const nomPrenom = document.getElementById('nomPrenom').value.trim();
+    const nigend = document.getElementById('nigend').value.trim();
+    const crt = document.getElementById('crt').value.trim();
+    if(!grade||!nomPrenom||!nigend||!crt) return alert("Remplissez tous les champs !");
+    infosValidees = true;
+    saveInfos();
+    disableInfos(true);
+    alert(`Informations validées :\nGrade: ${grade}\nNom Prénom: ${nomPrenom}\nNigend: ${nigend}\nCRT: ${crt}`);
+  });
+
+  document.getElementById('resetInfosBtn').addEventListener('click',()=>{
+    if(!confirm("Voulez-vous vraiment effacer les infos ?")) return;
+    state.infos = {grade:'',nomPrenom:'',nigend:'',crt:''};
+    localStorage.removeItem('infosPersonnelles');
+    loadInfos();
+    disableInfos(false);
+    infosValidees = false;
+    alert("Infos effacées");
+  });
+
+  // Générer QR Code
+  document.getElementById('transmettreBtn').addEventListener('click',()=>{
+    if(!crGenere) return alert("Générez d'abord le compte rendu !");
+    if(!infosValidees) return alert("Validez vos informations !");
+    
+    const grade = document.getElementById('grade').value.trim();
+    const nomPrenom = document.getElementById('nomPrenom').value.trim();
+    const nigend = document.getElementById('nigend').value.trim();
+    const crt = document.getElementById('crt').value.trim();
+
+    let contenuQR = `GRADE: ${grade}\nNOM: ${nomPrenom}\nNIGEND: ${nigend}\nCRT: ${crt}\n\n`;
+    ['train','bus','vl','pl'].forEach(t=>{
+      const typeLabel = t.charAt(0).toUpperCase()+t.slice(1);
+      contenuQR += `${typeLabel}: ${state.vehicules[t]} / ${state.cv[t]} CV / ${state.cf[t]} CF\n`;
+    });
+    const totalVehicules = ['train','bus','vl','pl'].reduce((a,t)=>a+state.vehicules[t],0);
+    const totalPersonnes = ['train','bus','vl','pl'].reduce((a,t)=>a+state.cv[t]+state.cf[t],0);
+    contenuQR += `\nTOTAL MOYENS : ${totalVehicules}\nTOTAL PERSONNES : ${totalPersonnes}`;
+
+    document.getElementById('compteRendu').value = contenuQR;
+
+    const qrDiv = document.getElementById('qrcode');
+    qrDiv.innerHTML = "";
+    new QRCode(qrDiv, {
+      text: contenuQR,
+      width: 256,
+      height: 256,
+      colorDark: "#000000",
+      colorLight: "#ffffff"
+    });
+  });
+
+  // Reset complet
+  document.getElementById('resetBtn').addEventListener('click',()=>{
+    if(!confirm("Voulez-vous vraiment tout effacer ?")) return;
+    state.vehicules={train:0,bus:0,vl:0,pl:0};
+    state.cv={train:0,bus:0,vl:0,pl:0};
+    state.cf={train:0,bus:0,vl:0,pl:0};
+    updateUI();
+    crGenere=false;
+    document.getElementById('compteRendu').value='';
+    document.getElementById('qrcode').innerHTML='';
+    localStorage.removeItem('moyensData');
+  });
+
+})();
+// 👉 Enregistrement du Service Worker (en dehors de l’IIFE)
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('service-worker.js')
+      .then(reg => console.log("✅ Service Worker enregistré", reg))
+      .catch(err => console.log("❌ Erreur Service Worker", err));
+  });
+}
+</script>
+</body>
+</html>
