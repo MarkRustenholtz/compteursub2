@@ -1,4 +1,4 @@
-const CACHE_NAME = "cr-gendarmerie-esr-cache-v1";
+const CACHE_NAME_ESR = "cr-gendarmerie-esr-v1";
 const urlsToCache = [
   "/",               // page principale
   "/index.html",
