@@ -30,15 +30,16 @@ self.addEventListener("activate", event => {
 });
 
 // Interception des requêtes → offline support
-self.addEventListener("fetch", event => {
+self.addEventListener('fetch', event => {
   event.respondWith(
-    caches.match(event.request).then(response => {
-      // si trouvé en cache → retourne
-      if (response) return response;
-      // sinon → tente un fetch réseau
-      return fetch(event.request).catch(() =>
-        caches.match("/index.html") // fallback si offline
-      );
-    })
+    fetch(event.request)
+      .catch(() => {
+        // Si on est hors ligne et que c'est une navigation
+        if (event.request.mode === 'navigate') {
+          return caches.match('./index.html');
+        }
+        // Sinon on regarde si la ressource est en cache
+        return caches.match(event.request);
+      })
   );
 });
