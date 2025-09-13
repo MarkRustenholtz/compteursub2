@@ -33,6 +33,7 @@
   #qrcode { text-align:center; margin-top:20px; }
   .info-section { border:2px solid #28a745; border-radius:10px; padding:15px; margin-bottom:20px; background:#f8fff9;}
   .info-row { display:flex; gap:15px; flex-wrap:wrap; align-items:center; margin-bottom:10px;}
+  #selectSite { font-size:1em; padding:4px 6px; margin-bottom:15px; }
 </style>
 </head>
 <body>
@@ -47,6 +48,15 @@
   <div class="info-row">
     <label>Nigend : <input type="text" id="nigend" class="info-input" placeholder="Entrez Nigend"></label>
     <label>CRT : <input type="text" id="crt" class="info-input" placeholder="Entrez CRT"></label>
+  </div>
+  <div class="info-row" style="justify-content:center;">
+    <label>Site : 
+      <select id="selectSite">
+        <option value="Breil">Breil</option>
+        <option value="La Turbie">La Turbie</option>
+        <option value="Autre">DSI Tende</option>
+      </select>
+    </label>
   </div>
   <div style="text-align:center; margin-top:15px;">
     <button id="validerInfos" class="green">Valider les informations</button>
@@ -116,7 +126,7 @@
   <h3>VL</h3>
   <div class="flex-row">
     <div>
-      <button class="plusminus" data-type="vl" data-field="véhicules" data-action="minus">-</button>
+      <button class="plusminus" data-type="vl" data-field="vehicules" data-action="minus">-</button>
       <span id="vlVehiclesCount">0</span> véhicules
       <button class="plusminus" data-type="vl" data-field="vehicules" data-action="plus">+</button>
     </div>
@@ -194,7 +204,6 @@
   };
   let saveTimeout=null, crGenere=false, infosValidees=false;
 
-  // Sauvegarde / chargement
   function debounceSave(){
     if(saveTimeout) clearTimeout(saveTimeout);
     saveTimeout = setTimeout(()=>{
@@ -240,7 +249,6 @@
     crGenere = true;
   }
 
-  // Infos personnelles
   function saveInfos(){
     state.infos.grade = document.getElementById('grade').value.trim();
     state.infos.nomPrenom = document.getElementById('nomPrenom').value.trim();
@@ -262,7 +270,6 @@
     });
   }
 
-  // Charger les données
   const savedData = localStorage.getItem('moyensData');
   if(savedData){
     try{
@@ -285,13 +292,11 @@
   updateUI();
   loadInfos();
 
-  // Boutons +/- et manuel
   document.querySelectorAll('button.plusminus').forEach(b=>b.addEventListener('click',()=>changeCount(b.dataset.type,b.dataset.field,b.dataset.action)));
   ['train','bus','vl','pl'].forEach(t=>document.getElementById(t+'CvAddManualBtn').addEventListener('click',()=>addManualCv(t)));
 
   document.getElementById('generateBtn').addEventListener('click',generateCR);
 
-  // Valider infos
   document.getElementById('validerInfos').addEventListener('click',()=>{
     const grade = document.getElementById('grade').value.trim();
     const nomPrenom = document.getElementById('nomPrenom').value.trim();
@@ -314,7 +319,48 @@
     alert("Infos effacées");
   });
 
-  // Générer QR Code
+  // Filtrage selon site
+  function filtrerCompteurs() {
+    const site = document.getElementById("selectSite").value;
+    const trainCard = document.getElementById("trainCard");
+    const busCard = document.getElementById("busCard");
+    const vlCard = document.getElementById("vlCard");
+    const plCard = document.getElementById("plCard");
+
+    trainCard.style.display = "none";
+    busCard.style.display = "none";
+    vlCard.style.display = "none";
+    plCard.style.display = "none";
+
+    if(site === "Breil") {
+      trainCard.style.display = "block";
+      busCard.style.display = "block";
+    } else if(site === "La Turbie") {
+      vlCard.style.display = "block";
+      plCard.style.display = "block";
+      busCard.style.display = "block";
+    } else {
+      trainCard.style.display = "block";
+      busCard.style.display = "block";
+      vlCard.style.display = "block";
+      plCard.style.display = "block";
+    }
+  }
+
+  // Charger site sauvegardé
+  const savedSite = localStorage.getItem('siteSelection');
+  if (savedSite) {
+    document.getElementById("selectSite").value = savedSite;
+  }
+
+  document.getElementById("selectSite").addEventListener("change", () => {
+    const site = document.getElementById("selectSite").value;
+    localStorage.setItem('siteSelection', site);
+    filtrerCompteurs();
+  });
+
+  filtrerCompteurs();
+
   document.getElementById('transmettreBtn').addEventListener('click',()=>{
     if(!crGenere) return alert("Générez d'abord le compte rendu !");
     if(!infosValidees) return alert("Validez vos informations !");
@@ -346,7 +392,6 @@
     });
   });
 
-  // Reset complet
   document.getElementById('resetBtn').addEventListener('click',()=>{
     if(!confirm("Voulez-vous vraiment tout effacer ?")) return;
     state.vehicules={train:0,bus:0,vl:0,pl:0};
@@ -357,10 +402,11 @@
     document.getElementById('compteRendu').value='';
     document.getElementById('qrcode').innerHTML='';
     localStorage.removeItem('moyensData');
+    localStorage.removeItem('siteSelection');
   });
 
 })();
-// 👉 Enregistrement du Service Worker (en dehors de l’IIFE)
+
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
     navigator.serviceWorker.register('service-worker.js')
