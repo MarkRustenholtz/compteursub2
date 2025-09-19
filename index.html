@@ -382,15 +382,15 @@
     document.getElementById('compteRendu').value = contenuQR;
 
     const qrDiv = document.getElementById('qrcode');
-    qrDiv.innerHTML = "";
-    new QRCode(qrDiv, {
-      text: contenuQR,
-      width: 256,
-      height: 256,
-      colorDark: "#000000",
-      colorLight: "#ffffff"
-    });
-  });
+qrDiv.innerHTML = "";
+new QRCode(qrDiv, {
+  text: contenuQR,
+  width: 256,
+  height: 256,
+  colorDark: "#000000",
+  colorLight: "#ffffff",
+  correctLevel: QRCode.CorrectLevel.L   // ✅ correctif ajouté
+});
 
   document.getElementById('resetBtn').addEventListener('click',()=>{
     if(!confirm("Voulez-vous vraiment tout effacer ?")) return;
