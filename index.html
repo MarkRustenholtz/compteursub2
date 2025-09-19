@@ -390,8 +390,8 @@ new QRCode(qrDiv, {
   colorDark: "#000000",
   colorLight: "#ffffff",
   correctLevel: QRCode.CorrectLevel.L   // ✅ correctif ajouté
+   });
 });
-
   document.getElementById('resetBtn').addEventListener('click',()=>{
     if(!confirm("Voulez-vous vraiment tout effacer ?")) return;
     state.vehicules={train:0,bus:0,vl:0,pl:0};
