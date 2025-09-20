@@ -1,52 +1,58 @@
-const CACHE_NAME = 'cr-gendarmerie-qrcode-v1';
+const CACHE_NAME = 'cr-gendarmerie-qrcode-v2'; // ⚠️ change le numéro à chaque mise à jour
 const urlsToCache = [
   './',
   './index.html',
   './manifest.json',
   './icon-192.png',
   './icon-512.png',
-  'https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js' // lib pour générer QR code
+  'https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js'
 ];
 
-// Installation : mise en cache des fichiers
+// Installation : mise en cache des fichiers de base
 self.addEventListener('install', event => {
   event.waitUntil(
     caches.open(CACHE_NAME).then(cache => cache.addAll(urlsToCache))
+      .then(() => self.skipWaiting())
   );
-  self.skipWaiting();
 });
 
-// Activation : suppression des anciens caches
+// Activation : suppression des anciens caches + notification nouvelle version
 self.addEventListener('activate', event => {
   event.waitUntil(
-    caches.keys().then(keys =>
-      Promise.all(
-        keys.map(key => {
-          if (key !== CACHE_NAME) return caches.delete(key);
+    (async () => {
+      // Supprimer les anciens caches
+      const cacheNames = await caches.keys();
+      await Promise.all(
+        cacheNames.map(name => {
+          if (name !== CACHE_NAME) return caches.delete(name);
         })
-      )
-    )
+      );
+
+      // Informer les pages clientes qu'une nouvelle version est prête
+      const clientsArr = await self.clients.matchAll({ type: 'window' });
+      for (const client of clientsArr) {
+        client.postMessage({ type: 'NEW_VERSION' });
+      }
+    })()
   );
   self.clients.claim();
 });
 
-// Gestion du hors-ligne et des requêtes
+// Fetch : réseau prioritaire, cache en secours
 self.addEventListener('fetch', event => {
   event.respondWith(
     fetch(event.request)
-      .then(networkResponse => {
-        // Met en cache la nouvelle ressource au passage
-        return caches.open(CACHE_NAME).then(cache => {
-          cache.put(event.request, networkResponse.clone());
-          return networkResponse;
+      .then(response => {
+        const responseClone = response.clone();
+        caches.open(CACHE_NAME).then(cache => {
+          cache.put(event.request, responseClone);
         });
+        return response;
       })
       .catch(() => {
-        // Si hors ligne et navigation => fallback vers index.html
         if (event.request.mode === 'navigate') {
           return caches.match('./index.html');
         }
-        // Sinon => ressource depuis le cache si dispo
         return caches.match(event.request);
       })
   );
