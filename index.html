@@ -18,9 +18,11 @@ body {
   margin: 0;
   padding: 0;
   background: #f0f2f5;
+  overflow-x: hidden;
   color: #222;
   min-height: 100vh;
   box-sizing: border-box;
+  touch-action: manipulation;
 }
 
 h1, h2, h3 { 
@@ -132,7 +134,8 @@ button.green:hover {
 #homePage {
   width: 100vw;       /* pleine largeur écran */
   height: 100vh;      /* pleine hauteur écran */
-  overflow: hidden;   /* empêche scroll horizontal + vertical */
+   overflow-y: auto;    /* autorise le scroll vertical */
+  overflow-x: hidden;  /* évite le scroll horizontal */
   margin: 0;
   padding: 0;
   box-sizing: border-box;
@@ -203,7 +206,7 @@ button.green:hover {
   background-color: #003366;
   color: white;
   padding: 10px;
-  border-radius: 8px;
+  border-radius: 0;
   margin-bottom: 20px;
 }
 
@@ -492,6 +495,12 @@ span[id$="Count"] {
   background: #003366;
   color: #fff;
 }
+ /* Empêche le zoom automatique sur iOS */
+  @supports (-webkit-touch-callout: none) {
+    input[type=text], input[type=date], input[type=time], input[type=number], select {
+      font-size: 16px;
+    }
+  }
 
 </style>
 </head>
