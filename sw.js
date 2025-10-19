@@ -1,4 +1,4 @@
-const CACHE_NAME = 'cr-gendarmerie-qrcode-v4'; // ⚠️ change le numéro à chaque mise à jour
+const CACHE_NAME = 'cr-gendarmerie-qrcode-v5'; // ⚠️ change le numéro à chaque mise à jour
 const urlsToCache = [
   './',
   './index.html',
