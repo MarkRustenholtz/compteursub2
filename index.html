@@ -1034,21 +1034,33 @@ function addManualCf(type){
   input.placeholder = '0';
   input.blur();
 }
-
-
+	
+const siteConfig = {
+  "La Turbie": ["vl", "bus", "pl"],
+  "Breil": ["train", "bus"],
+  "DSI Tende": ["train", "bus", "vl", "pl"]
+};
   
-  function generateCR(){
-    let cr = '';
-    ['train','bus','vl','pl'].forEach(t=>{
-      cr += `${t.charAt(0).toUpperCase()+t.slice(1)}: ${state.vehicules[t]} / ${state.cv[t]} CV / ${state.cf[t]} CF\n`;
-    });
-    const totalVehicules = ['train','bus','vl','pl'].reduce((a,t)=>a+state.vehicules[t],0);
-    const totalPersonnes = ['train','bus','vl','pl'].reduce((a,t)=>a+state.cv[t]+state.cf[t],0);
-    cr += `\nTOTAL MOYENS : ${totalVehicules}\nTOTAL PERSONNES : ${totalPersonnes}`;
-    if(document.getElementById('compteRendu'))
-      document.getElementById('compteRendu').value = cr;
-    crGenere = true;
+  function generateCR() {
+  const site = localStorage.getItem("siteSelection");
+  const typesAAfficher = siteConfig[site] || ['train','bus','vl','pl'];
+
+  let cr = '';
+  typesAAfficher.forEach(t => {
+    cr += `${t.charAt(0).toUpperCase()+t.slice(1)}: ${state.vehicules[t]} / ${state.cv[t]} CV / ${state.cf[t]} CF\n`;
+  });
+
+  const totalVehicules = typesAAfficher.reduce((a,t)=>a+state.vehicules[t],0);
+  const totalPersonnes = typesAAfficher.reduce((a,t)=>a+state.cv[t]+state.cf[t],0);
+
+  cr += `\nTOTAL MOYENS : ${totalVehicules}\nTOTAL PERSONNES : ${totalPersonnes}`;
+
+  if (document.getElementById('compteRendu'))
+    document.getElementById('compteRendu').value = cr;
+
+  crGenere = true;
   }
+	
 
   function saveInfos(){
     state.infos.grade = document.getElementById('grade')?.value.trim() || '';
@@ -1735,4 +1747,5 @@ function confirmCallCORG() {
 </script>
 </body>
 </html>
+
 
