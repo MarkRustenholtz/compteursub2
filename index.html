@@ -1034,9 +1034,9 @@ function addManualCf(type){
   input.placeholder = '0';
   input.blur();
 }
-	
+
 const siteConfig = {
-  "La Turbie": ["vl", "bus", "pl"],
+  "La Turbie": ["bus", "vl", "pl"],
   "Breil": ["train", "bus"],
   "DSI Tende": ["train", "bus", "vl", "pl"]
 };
@@ -1059,8 +1059,7 @@ const siteConfig = {
     document.getElementById('compteRendu').value = cr;
 
   crGenere = true;
-  }
-	
+}
 
   function saveInfos(){
     state.infos.grade = document.getElementById('grade')?.value.trim() || '';
@@ -1137,44 +1136,53 @@ const siteConfig = {
   });
 });
   // Boutons Compte rendu
-  if (document.getElementById('generateBtn'))
-    document.getElementById('generateBtn').addEventListener('click', generateCR);
+if (document.getElementById('generateBtn'))
+  document.getElementById('generateBtn').addEventListener('click', generateCR);
 
-  if (document.getElementById('transmettreBtn'))
-    document.getElementById('transmettreBtn').addEventListener('click', ()=>{
-      if(!crGenere) return alert("Générez d'abord le compte rendu !");
-      if(!infosValidees) return alert("Validez vos informations !");
-      
-      const grade = document.getElementById('grade')?.value.trim() || '';
-      const nomPrenom = document.getElementById('nomPrenom')?.value.trim() || '';
-      const nigend = document.getElementById('nigend')?.value.trim() || '';
-      const crt = document.getElementById('crt')?.value.trim() || '';
+if (document.getElementById('transmettreBtn'))
+  document.getElementById('transmettreBtn').addEventListener('click', () => {
+    if (!crGenere) return alert("Générez d'abord le compte rendu !");
+    if (!infosValidees) return alert("Validez vos informations !");
+    
+    const grade = document.getElementById('grade')?.value.trim() || '';
+    const nomPrenom = document.getElementById('nomPrenom')?.value.trim() || '';
+    const nigend = document.getElementById('nigend')?.value.trim() || '';
+    const crt = document.getElementById('crt')?.value.trim() || '';
+    const site = localStorage.getItem("siteSelection") || '';
 
-      let contenuQR = `GRADE: ${grade}\nNOM: ${nomPrenom}\nNIGEND: ${nigend}\nCRT: ${crt}\n\n`;
-      ['train','bus','vl','pl'].forEach(t=>{
-        const typeLabel = t.charAt(0).toUpperCase()+t.slice(1);
-        contenuQR += `${typeLabel}: ${state.vehicules[t]} / ${state.cv[t]} CV / ${state.cf[t]} CF\n`;
-      });
-      const totalVehicules = ['train','bus','vl','pl'].reduce((a,t)=>a+state.vehicules[t],0);
-      const totalPersonnes = ['train','bus','vl','pl'].reduce((a,t)=>a+state.cv[t]+state.cf[t],0);
-      contenuQR += `\nTOTAL MOYENS : ${totalVehicules}\nTOTAL PERSONNES : ${totalPersonnes}`;
+    // Détermination des types selon le site choisi
+    const typesAAfficher = siteConfig[site] || ['train','bus','vl','pl'];
 
-      if(document.getElementById('compteRendu'))
-        document.getElementById('compteRendu').value = contenuQR;
+    let contenuQR = `GRADE: ${grade}\nNOM: ${nomPrenom}\nNIGEND: ${nigend}\nCRT: ${crt}\n\n`;
 
-      const qrDiv = document.getElementById('qrcode');
-      if(qrDiv){
-        qrDiv.innerHTML = "";
-        new QRCode(qrDiv, {
-          text: contenuQR,
-          width: 256,
-          height: 256,
-          colorDark: "#000000",
-          colorLight: "#ffffff",
-          correctLevel: QRCode.CorrectLevel.L
-        });
-      }
+    // On boucle uniquement sur les types du site
+    typesAAfficher.forEach(t => {
+      const typeLabel = t.charAt(0).toUpperCase() + t.slice(1);
+      contenuQR += `${typeLabel}: ${state.vehicules[t]} / ${state.cv[t]} CV / ${state.cf[t]} CF\n`;
     });
+
+    // Totaux adaptés aussi
+    const totalVehicules = typesAAfficher.reduce((a, t) => a + state.vehicules[t], 0);
+    const totalPersonnes = typesAAfficher.reduce((a, t) => a + state.cv[t] + state.cf[t], 0);
+    contenuQR += `\nTOTAL MOYENS : ${totalVehicules}\nTOTAL PERSONNES : ${totalPersonnes}`;
+
+    if (document.getElementById('compteRendu'))
+      document.getElementById('compteRendu').value = contenuQR;
+
+    // Génération du QR code
+    const qrDiv = document.getElementById('qrcode');
+    if (qrDiv) {
+      qrDiv.innerHTML = "";
+      new QRCode(qrDiv, {
+        text: contenuQR,
+        width: 256,
+        height: 256,
+        colorDark: "#000000",
+        colorLight: "#ffffff",
+        correctLevel: QRCode.CorrectLevel.L
+      });
+    }
+  });
 
   if (document.getElementById('resetBtn'))
     document.getElementById('resetBtn').addEventListener('click', ()=>{
@@ -1747,5 +1755,4 @@ function confirmCallCORG() {
 </script>
 </body>
 </html>
-
 
