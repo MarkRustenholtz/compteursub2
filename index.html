@@ -853,7 +853,7 @@ span[id$="Count"] {
         <option value="Autre">Autre</option>
       </select>
     </label>
-    <label>Nationalité<input type="text" id="nationalite" autocomplete="off"></label>
+    <label>Nationalité<input type="text"      class="nat-autocomplete" id="nationalite" autocomplete="off"></label>
 
     <label>Date de naissance :</label>
     <div class="date-naissance">
@@ -902,9 +902,17 @@ span[id$="Count"] {
 
   <h2>Historique des fiches</h2>
   <div id="historique"></div>
-  <button id="effacerFiches" class="red">Effacer toutes les fiches</button>
-</div>
 
+  <!-- Zone d'affichage du QR pour une fiche sélectionnée -->
+  <div id="qrFicheContainer" style="text-align:center; margin-top:15px;">
+    <!-- Le QR s'affichera ici quand on cliquera sur "QR BorderForce" -->
+  </div>
+
+  <button id="effacerFiches" type="button" class="red">
+  Effacer toutes les fiches
+</button>
+
+</div>
   </div>
 </div>
 
@@ -1169,17 +1177,21 @@ if (document.getElementById('transmettreBtn'))
     if (document.getElementById('compteRendu'))
       document.getElementById('compteRendu').value = contenuQR;
 
-    // Génération du QR code
-    const qrDiv = document.getElementById('qrcode');
-    if (qrDiv) {
-      qrDiv.innerHTML = "";
-      new QRCode(qrDiv, {
-        text: contenuQR,
-        width: 256,
-        height: 256,
-        colorDark: "#000000",
-        colorLight: "#ffffff",
-        correctLevel: QRCode.CorrectLevel.L
+   // Génération du QR code
+const qrDiv = document.getElementById('qrcode');
+if (qrDiv) {
+  qrDiv.innerHTML = "";
+
+  // 🔒 Encodage universel avant QR (gère accents, espaces, tirets, retours à la ligne)
+  const texteEncode = encodeURIComponent(contenuQR);
+
+  new QRCode(qrDiv, {
+    text: texteEncode,          // ← on met le texte encodé ici
+    width: 256,
+    height: 256,
+    colorDark: "#000000",
+    colorLight: "#ffffff",
+    correctLevel: QRCode.CorrectLevel.L
       });
     }
   });
@@ -1196,6 +1208,14 @@ if (document.getElementById('transmettreBtn'))
       if(document.getElementById('qrcode')) document.getElementById('qrcode').innerHTML='';
       localStorage.removeItem('moyensData');
       localStorage.removeItem('siteSelection');
+	   localStorage.removeItem('fichesESI');
+	    // On vide l’historique à l’écran si la fonction existe
+    if (typeof afficherHistorique === 'function') {
+      afficherHistorique();
+    }
+    // On nettoie le QR des fiches identité
+    const qrFiche = document.getElementById('qrFicheContainer');
+    if (qrFiche) qrFiche.innerHTML = '';
 	   displaySelectedSite();
        filtrerCompteurs();
     });
@@ -1375,18 +1395,18 @@ function afficherHistorique() {
             <strong>Fiche #${index+1} ${fiche.categorie}</strong><br>
             Nom: ${fiche.nom} ${fiche.prenom} | Sexe: ${fiche.sexe} | Nationalité: ${fiche.nationalite}<br>
             Date de naissance: ${fiche.dateNaissance || 'Non renseignée'} | Âge: ${fiche.age} ans<br>
-           Intervention: ${fiche.heure || fiche.heureDate} le ${formatDateIntervention(fiche.dateIntervention)} 
-Lieu: ${fiche.lieuInterpellation} | Suites données: ${fiche.suitesDonnees || ''}<br>
-           Départ: ${fiche.villeDepart}, ${fiche.paysDepart} | Destination: ${fiche.villeDestination}, ${fiche.paysDestination}<br>
+            Intervention: ${fiche.heure || fiche.heureDate} le ${formatDateIntervention(fiche.dateIntervention)}<br>
+            Lieu: ${fiche.lieuInterpellation} | Suites données: ${fiche.suitesDonnees || ''}<br>
+            Départ: ${fiche.villeDepart}, ${fiche.paysDepart} | Destination: ${fiche.villeDestination}, ${fiche.paysDestination}<br>
             Véhicule: ${fiche.vehicule} | Immatriculation: ${fiche.immatriculation}<br>
             Pièces d'identité: ${fiche.piecesIdentite.join(", ")}<br>
             <button onclick="modifierFiche(${index})" class="green">Modifier</button>
             <button onclick="supprimerFiche(${index})" class="red">Supprimer</button>
+            <button onclick="genererQrFiche(${index})" class="blue">QR BorderForce</button>
         `;
         historiqueDiv.appendChild(ficheDiv);
     });
 }
-
 function supprimerFiche(index) {
     if (confirm("Voulez-vous vraiment supprimer cette fiche ?")) {
         const fiches = JSON.parse(localStorage.getItem('fichesESI') || '[]');
@@ -1442,13 +1462,113 @@ document.getElementById('suitesDonnees').value = fiche.suitesDonnees || '';
     afficherHistorique();
 }
 
-document.getElementById('effacerFiches').addEventListener('click', function() {
-    if (confirm("Voulez-vous vraiment effacer toutes les fiches ?")) {
-        localStorage.removeItem('fichesESI');
-        afficherHistorique();
-        alert("Toutes les fiches ont été effacées !");
-    }
-});
+function genererQrFiche(index) {
+  const fiches = JSON.parse(localStorage.getItem("fichesESI") || "[]");
+  const fiche = fiches[index];
+  if (!fiche) {
+    alert("Fiche introuvable.");
+    return;
+  }
+
+  // Sécurité : vérifier que la lib QRCode est bien là
+  if (typeof QRCode === "undefined") {
+    alert("Erreur : librairie QRCode non chargée.");
+    return;
+  }
+
+  // ⚙️ On prépare les champs nécessaires pour BorderForce
+  const cat   = (fiche.categorie || "").trim();              // ESI / PASSEUR
+  const h     = (fiche.heure || "").trim();                  // heure d'intervention
+  const dn    = (fiche.dateNaissance || "").trim();          // JJ/MM/AAAA
+  const lieu  = (fiche.lieuInterpellation || "").trim();
+  const suites= (fiche.suitesDonnees || "").trim();
+  const nat   = (fiche.nationalite || "").trim();
+  const sexe  = (fiche.sexe || "").trim();                   // Masculin / Féminin / Autre
+
+  // On évite les ";" dans les champs (remplacés par ",")
+  function clean(v) {
+    return v.replace(/;/g, ",");
+  }
+
+  // 🔗 Format compact attendu par BorderForce :
+  // ID;cat;heure;dateNaissance;lieu;suites;nat;sexe
+  const brut =
+    "ID;" +
+    [
+      clean(cat),
+      clean(h),
+      clean(dn),
+      clean(lieu),
+      clean(suites),
+      clean(nat),
+      clean(sexe)
+    ].join(";");
+
+  // 🔒 Encodage URI pour bien gérer accents, apostrophes, retour à la ligne, etc.
+  const texteEncode = encodeURIComponent(brut);
+
+  const container = document.getElementById("qrFicheContainer");
+  if (!container) {
+    alert("Impossible de trouver #qrFicheContainer");
+    return;
+  }
+
+  // On efface l'ancien contenu
+  container.innerHTML = "";
+
+  // Titre au-dessus du QR
+  const titre = document.createElement("h3");
+  titre.textContent = `QR Fiche #${index + 1} (${cat || "?"})`;
+  titre.style.color = "#003366";
+  titre.style.marginTop = "20px";
+  container.appendChild(titre);
+
+  const info = document.createElement("p");
+  info.textContent = "À scanner avec BorderForce (section QR)";
+  info.style.fontWeight = "bold";
+  info.style.marginBottom = "10px";
+  container.appendChild(info);
+
+  // Info taille (pour debug)
+  const sizeInfo = document.createElement("p");
+  sizeInfo.textContent = `Taille : ${brut.length} caractères`;
+  sizeInfo.style.fontSize = "0.85em";
+  sizeInfo.style.color = "#27ae60";
+  sizeInfo.style.fontWeight = "bold";
+  container.appendChild(sizeInfo);
+
+  // Div qui accueillera le QR
+  const qrBox = document.createElement("div");
+  qrBox.style.display = "flex";
+  qrBox.style.justifyContent = "center";
+  qrBox.style.marginBottom = "20px";
+  container.appendChild(qrBox);
+
+  try {
+    new QRCode(qrBox, {
+      text: texteEncode,                // 👈 encodé (accents OK)
+      width: 280,
+      height: 280,
+      colorDark: "#000000",
+      colorLight: "#ffffff",
+      correctLevel: QRCode.CorrectLevel.L
+    });
+
+    const success = document.createElement("p");
+    success.textContent = "✅ QR code généré avec succès";
+    success.style.color = "#27ae60";
+    success.style.fontWeight = "bold";
+    success.style.marginTop = "5px";
+    container.appendChild(success);
+  } catch (error) {
+    console.error("Erreur génération QR:", error);
+    const err = document.createElement("p");
+    err.textContent = "❌ Erreur : " + error.message;
+    err.style.color = "red";
+    container.appendChild(err);
+  }
+}
+
 
 afficherHistorique();
 /* ---------- BLOC JS COMPLET POUR ESI+VISA (195 pays) ---------- */
@@ -1752,6 +1872,145 @@ function confirmCallCORG() {
     popup.style.display = 'none';
   };
 }
+const NATIONALITES = [
+  "Afghane","Albanaise","Algérienne","Allemande","Américaine","Andorrane","Angolaise","Argentine",
+  "Arménienne","Australienne","Autrichienne","Azerbaïdjanaise",
+  "Belge","Béninoise","Biélorusse","Bolivienne","Bosnienne","Botswanaise","Brésilienne","Britannique","Bulgare","Burkinabè","Burundaise",
+  "Cambodgienne","Camerounaise","Canadienne","Cap-verdienne","Centrafricaine","Chilienne","Chinoise","Colombienne","Comorienne","Congolaise",
+  "Croate","Cubaine","Chypriote","Tchèque",
+  "Danoise","Djiboutienne","Dominicaine","Dominiquaise",
+  "Égyptienne","Émirienne","Équatorienne","Érythréenne","Espagnole","Estonienne","Éthiopienne",
+  "Finlandaise","Française",
+  "Gabonaise","Gambienne","Géorgienne","Ghanéenne","Grecque","Guatémaltèque","Guinéenne","Guinéenne-Bissau","Guyanaise",
+  "Haïtienne","Hondurienne","Hongroise",
+  "Indienne","Indonésienne","Irakienne","Iranienne","Irlandaise","Islandaise","Israélienne","Italienne",
+  "Ivoirienne",
+  "Japonaise","Jordanienne",
+  "Kazakhstanaise","Kenyane","Kirghize","Kosovare","Koweïtienne",
+  "Laotienne","Libanaise","Libérienne","Libyenne","Liechtensteinoise","Lituanienne","Luxembourgeoise",
+  "Macédonienne","Malagasy","Malaisienne","Malawienne","Malienne","Maltaise","Marocaine","Mauricienne","Mauritanienne","Mexicaine",
+  "Moldave","Monégasque","Mongole","Monténégrine","Mozambicaine",
+  "Namibienne","Néerlandaise","Néo-zélandaise","Népalaise","Nigériane","Nigérienne","Nord-coréenne","Norvégienne",
+  "Omanaise",
+  "Pakistanaise","Palestinienne","Panaméenne","Paraguayenne","Péruvienne","Philippine","Polonaise","Portugaise",
+  "Qatarienne",
+  "Roumaine","Russe","Rwandaise",
+  "Saoudienne","Sénégalaise","Serbe","Singapourienne","Slovaque","Slovène","Somalienne","Soudanaise","Sri-lankaise",
+  "Sud-africaine","Sud-coréenne","Sud-soudanaise","Suédoise","Suisse","Syrienne",
+  "Tadjike","Tanzanienne","Tchadienne","Thaïlandaise","Togolaise","Tunisienne","Turque",
+  "Ukrainienne","Uruguayenne","Uzbekistanaise",
+  "Vénézuélienne","Vietnamienne",
+  "Yéménite",
+  "Zambienne","Zimbabwéenne"
+];
+
+function attachNatAutocomplete(input) {
+  const wrapper = document.createElement('div');
+  wrapper.className = 'nat-wrapper';
+  input.parentNode.insertBefore(wrapper, input);
+  wrapper.appendChild(input);
+
+  const list = document.createElement('div');
+  list.className = 'nat-list';
+  list.style.display = 'none';
+  wrapper.appendChild(list);
+
+  // Normalisation : minuscules + suppression accents + trim
+  const normalize = (s) =>
+    (s || "")
+      .toString()
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .toLowerCase()
+      .trim();
+
+  input.addEventListener('input', () => {
+    const search = normalize(input.value);
+    list.innerHTML = '';
+
+    if (!search) {
+      list.style.display = 'none';
+      return;
+    }
+
+    // Prépare une liste [label + version normalisée]
+    const matches = NATIONALITES
+      .map(label => ({
+        label,
+        norm: normalize(label)
+      }))
+      // garde celles qui CONTIENNENT le texte tapé
+      .filter(item => item.norm.includes(search))
+      // priorité à celles qui COMMENCENT par ce que tu tapes
+      .sort((a, b) => {
+        const aStarts = a.norm.startsWith(search);
+        const bStarts = b.norm.startsWith(search);
+        if (aStarts && !bStarts) return -1;
+        if (!aStarts && bStarts) return 1;
+        return a.label.localeCompare(b.label);
+      })
+      .slice(0, 20);
+
+    if (!matches.length) {
+      list.style.display = 'none';
+      return;
+    }
+
+    matches.forEach(item => {
+      const div = document.createElement('div');
+      div.className = 'nat-item';
+      div.textContent = item.label;
+      div.addEventListener('click', () => {
+        input.value = item.label;
+        list.innerHTML = '';
+        list.style.display = 'none';
+      });
+      list.appendChild(div);
+    });
+
+    list.style.display = 'block';
+  });
+
+  // ferme si clic à l'extérieur
+  document.addEventListener('click', (e) => {
+    if (!wrapper.contains(e.target)) {
+      list.style.display = 'none';
+    }
+  });
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  document.querySelectorAll('.nat-autocomplete').forEach(attachNatAutocomplete);
+});
+
+// ==============================
+//  Bouton : Effacer toutes les fiches
+// ==============================
+document.addEventListener("DOMContentLoaded", () => {
+  const btnEffacer = document.getElementById("effacerFiches");
+  if (!btnEffacer) return;
+
+  btnEffacer.addEventListener("click", () => {
+    if (!confirm("Voulez-vous vraiment effacer toutes les fiches ?")) {
+      return;
+    }
+
+    // On supprime la clé utilisée pour stocker les fiches
+    localStorage.removeItem("fichesESI");
+
+    // On vide l'historique à l'écran
+    if (typeof afficherHistorique === "function") {
+      afficherHistorique();
+    }
+
+    // On efface aussi le QR éventuel affiché
+    const qrDiv = document.getElementById("qrFicheContainer");
+    if (qrDiv) qrDiv.innerHTML = "";
+
+    alert("Toutes les fiches ont été effacées.");
+  });
+});
+
 </script>
 </body>
 </html>
