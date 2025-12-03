@@ -656,28 +656,38 @@ span[id$="Count"] {
   </div>
 
   <section class="info-section">
-    <h3 style="margin-top:0; color:#2c3e50;">Informations personnelles</h3>
-    <div class="info-row">
-      <label>Grade : 
-        <input type="text" id="grade" class="info-input" placeholder="Entrez votre grade">
-      </label>
-      <label>Nom Prénom : 
-        <input type="text" id="nomPrenom" class="info-input" placeholder="Entrez nom prénom">
-      </label>
-    </div>
-    <div class="info-row">
-      <label>Nigend : 
-        <input type="text" id="nigend" class="info-input" placeholder="Entrez Nigend">
-      </label>
-      <label>CRT : 
-        <input type="text" id="crt" class="info-input" placeholder="Entrez CRT (ex: 06/1 Nice)">
-      </label>
-    </div>
-    <div style="text-align:center; margin-top:15px;">
-      <button id="validerInfos" class="green">Valider les informations</button>
-      <button id="resetInfosBtn" class="red">Effacer les informations</button>
-    </div>
-  </section>
+  <h3 style="margin-top:0; color:#2c3e50;">Informations personnelles</h3>
+
+  <div class="info-row">
+    <label>Grade : 
+      <input type="text" id="grade" class="info-input"
+             placeholder="Entrez votre grade"
+             style="text-transform:uppercase;"
+             oninput="this.value = this.value.toUpperCase();">
+    </label>
+
+    <label>Nom Prénom : 
+      <input type="text" id="nomPrenom" class="info-input" placeholder="Entrez nom prénom">
+    </label>
+  </div>
+
+  <div class="info-row">
+    <label>Nigend : 
+      <input type="number" id="nigend" class="info-input"
+             placeholder="Entrez Nigend"
+             inputmode="numeric" pattern="[0-9]*">
+    </label>
+
+    <label>CRT : 
+      <input type="text" id="crt" class="info-input" placeholder="Entrez CRT (ex: 06/1 Nice)">
+    </label>
+  </div>
+
+  <div style="text-align:center; margin-top:15px;">
+    <button id="validerInfos" class="green">Valider les informations</button>
+    <button id="resetInfosBtn" class="red">Effacer les informations</button>
+  </div>
+</section>
 </div>
 
 <!-- Page Véhicules/Compteurs -->
