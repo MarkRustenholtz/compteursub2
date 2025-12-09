@@ -1383,7 +1383,8 @@ suitesDonnees: document.getElementById('suitesDonnees').value,
         paysDestination: document.getElementById('paysDestination').value,
         vehicule: document.getElementById('vehicule').value,
         immatriculation: document.getElementById('immatriculation').value,
-        piecesIdentite: pieces
+        piecesIdentite: pieces,
+		 heureEnregistrement: Date.now()   // ⏱️ ajout du timestamp pour le timer
     };
     
     const fiches = JSON.parse(localStorage.getItem('fichesESI') || '[]');
@@ -1394,15 +1395,42 @@ suitesDonnees: document.getElementById('suitesDonnees').value,
     afficherHistorique();
 });
 
+const DELAI_EFFACEMENT_MS = 4 * 60 * 60 * 1000; // 4 heures
+
 function afficherHistorique() {
     const historiqueDiv = document.getElementById('historique');
+    if (!historiqueDiv) return;
+
     historiqueDiv.innerHTML = '';
     const fiches = JSON.parse(localStorage.getItem('fichesESI') || '[]');
+
+    if (fiches.length === 0) {
+        historiqueDiv.innerHTML = '<p>Aucune fiche enregistrée.</p>';
+        return;
+    }
+
     fiches.forEach((fiche, index) => {
         const ficheDiv = document.createElement('div');
         ficheDiv.className = 'fiche';
+        ficheDiv.style.position = 'relative';
+        ficheDiv.style.border = '1px solid #ccc';
+        ficheDiv.style.borderRadius = '8px';
+        ficheDiv.style.padding = '8px';
+        ficheDiv.style.marginBottom = '8px';
+
+        // 🔵 Timer visuel en haut à droite
+        const timerSpan = document.createElement('span');
+        timerSpan.className = 'timer-fiche';
+        timerSpan.style.position = 'absolute';
+        timerSpan.style.top = '8px';
+        timerSpan.style.right = '8px';
+        timerSpan.style.color = '#0066cc';
+        timerSpan.style.fontFamily = 'monospace';
+        timerSpan.style.fontWeight = 'bold';
+        timerSpan.style.fontSize = '1.4em'; // 👈 taille du texte
+
         ficheDiv.innerHTML = `
-            <strong>Fiche #${index+1} ${fiche.categorie}</strong><br>
+            <strong>Fiche #${index + 1} ${fiche.categorie}</strong><br>
             Nom: ${fiche.nom} ${fiche.prenom} | Sexe: ${fiche.sexe} | Nationalité: ${fiche.nationalite}<br>
             Date de naissance: ${fiche.dateNaissance || 'Non renseignée'} | Âge: ${fiche.age} ans<br>
             Intervention: ${fiche.heure || fiche.heureDate} le ${formatDateIntervention(fiche.dateIntervention)}<br>
@@ -1414,9 +1442,45 @@ function afficherHistorique() {
             <button onclick="supprimerFiche(${index})" class="red">Supprimer</button>
             <button onclick="genererQrFiche(${index})" class="blue">QR BorderForce</button>
         `;
+
+        ficheDiv.appendChild(timerSpan);
         historiqueDiv.appendChild(ficheDiv);
+
+        // Si la fiche a une heure d’enregistrement, on lance le compte à rebours
+        if (fiche.heureEnregistrement) {
+            majTimerVisuel(fiche.heureEnregistrement, timerSpan);
+        } else {
+            timerSpan.textContent = '—';
+        }
     });
 }
+function majTimerVisuel(heureEnregistrement, elementTimer) {
+    const interval = setInterval(() => {
+        const reste = (heureEnregistrement + DELAI_EFFACEMENT_MS) - Date.now();
+
+        if (reste <= 0) {
+            clearInterval(interval);
+            elementTimer.textContent = "Expirée";
+            elementTimer.style.color = "red";
+            effacerFicheAvecHeure(heureEnregistrement);
+            afficherHistorique();
+            return;
+        }
+
+        const heures = Math.floor(reste / (1000 * 60 * 60));
+        const minutes = Math.floor((reste % (1000 * 60 * 60)) / (1000 * 60));
+
+        elementTimer.textContent = `${heures}h ${minutes}m`;
+        elementTimer.style.fontSize = '1.4em';
+        elementTimer.style.fontWeight = 'bold';
+    }, 1000);
+}
+function effacerFicheAvecHeure(heureEnregistrement) {
+    const fiches = JSON.parse(localStorage.getItem('fichesESI') || '[]');
+    const nouvellesFiches = fiches.filter(f => f.heureEnregistrement !== heureEnregistrement);
+    localStorage.setItem('fichesESI', JSON.stringify(nouvellesFiches));
+}
+
 function supprimerFiche(index) {
     if (confirm("Voulez-vous vraiment supprimer cette fiche ?")) {
         const fiches = JSON.parse(localStorage.getItem('fichesESI') || '[]');
